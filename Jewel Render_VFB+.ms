@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Shamballa Jewels
-VERSION = 1.0.4
+VERSION = 1.0.5
 AUTHOR = MastaMan
 DEV = 
 HELP = help\jwrender.html
@@ -13,24 +13,30 @@ HELP = help\jwrender.html
 
 [1.0.1]
 
-* Changed UI
+* Changed UI=
 
 
 [1.0.2]
 
-* Small bug fixes
+* Small bug fixes=
 
 [1.0.3]
 
-+ Added: UVW XForm for Jewels
++ Added: UVW XForm for Jewels=
 
 [1.0.4]
 
-+ Added: Ability to add custom reflection objects. Just link it to dummy!
++ Added: Ability to add custom reflection objects. Just link it to dummy!=
+
+[1.0.5]
+
++ Added: Set Push Modifier Value for string by resolution=
++ Added: Section for add custom bracelet for trim jewels in render=
+
 
 [ABOUT]
 
-This script automate rendering Shamballa Jewels
+This script automate rendering Shamballa Jewels=
 
 TIPS:
 	Scene (ground, light, cameras),  Jewels and Bracelet (strings, dummies) must be in separate files!
@@ -56,6 +62,7 @@ global _rStep0
 
 global jewelArray = #()
 global bracletArray = #()
+global defaultPushValue = units.decodeValue "0.04mm"
 
 global iniFile = @""
 
@@ -131,7 +138,7 @@ fn addObjects type: #jewels =
 	
 	rollout _rAddObjects ""
 	(		
-		MultiListBox lbxAddObjects "" height: 23
+		MultiListBox lbxAddObjects "" height: 23				
 		button btnAddObjects "Add" width: 85 across: 2
 		button btnClose "Close" width: 85
 		
@@ -168,6 +175,11 @@ fn addObjects type: #jewels =
 					_rAddObjects.title = "Bracelet"
 					objectsArray = bracletArray
 				)
+				#bracelettrim:
+				(
+					_rAddObjects.title = "Bracelet For Ttrim"
+					objectsArray = bracletArray
+				)
 			)
 								
 			items = for i in objectsArray where not isGroupMember i and superClassOf i != Shape  collect i.name
@@ -202,6 +214,13 @@ fn addObjects type: #jewels =
 					t = _rStep1.lbxBracelet.items
 										
 					_rStep1.lbxBracelet.items = collectItems old:t
+				)
+				#bracelettrim:
+				(
+					t = _rStep1.lbxBraceletTrim.items
+										
+					c = collectItems()
+					if(c.count > 0) do _rStep1.lbxBraceletTrim.items = #(c[1])
 				)
 			)
 		)
@@ -332,18 +351,27 @@ rollout _rStep1  "Settings"
 		listBox lbxBracelet "Bracelet:" height: 6
 		button btnAddBracelet "Add" width: 90 across: 2		
 		button btnDelBracelet "Del" width: 90
+		
+		progressBar pbSeparate3 "" height: 4
+		listBox lbxBraceletTrim "Bracelet For Trim Jewels:" height: 1
+		button btnAddBraceletTrim "Add" width: 90 across: 2		
+		button btnDelBraceletTrim "Del" width: 90
 	)
 	
 	group "Jewels UVW XForm"
 	(
-		spinner spnUOffsetMin "U Offset:" range: [-9999, 9999, -1] type: #float fieldWidth: 40 across: 2 align: #left
-		spinner spnUOffsetMax "to " range: [-9999, 9999, 1] type: #float fieldWidth: 40 align: #left offset: [-30, 0]
+		spinner spnUOffsetMin "U Offset:" range: [-9999, 9999, -0.5] type: #float fieldWidth: 40 across: 2 align: #left
+		spinner spnUOffsetMax "to " range: [-9999, 9999, 0.5] type: #float fieldWidth: 40 align: #left offset: [-30, 0]
 		
-		spinner spnVOffsetMin "V Offset:" range: [-9999, 9999, -1] type: #float fieldWidth: 40 across: 2 align: #left
-		spinner spnVOffsetMax "to " range: [-9999, 9999, 1] type: #float fieldWidth: 40 align: #left offset: [-30, 0]
+		spinner spnVOffsetMin "V Offset:" range: [-9999, 9999, -0.5] type: #float fieldWidth: 40 across: 2 align: #left
+		spinner spnVOffsetMax "to " range: [-9999, 9999, 0.5] type: #float fieldWidth: 40 align: #left offset: [-30, 0]
 	)
 	
-	
+	group "Bracelet Push Modifier Value by Resolution"
+	(
+		dropdownlist ddlPushByRes "" width: 110 across: 2
+		spinner spnPushVal "Push Value:" range: [-9999, 9999, defaultPushValue] type: #worldunits fieldWidth: 70 align: #left offset: [0, 0]
+	)
 	
 	fn disableUI d btn: true =
 	(
@@ -363,6 +391,11 @@ rollout _rStep1  "Settings"
 	fn getBracelet =
 	(
 		return getINISetting iniFile "BRACELET"		
+	)
+	
+	fn getBraceletTrim =
+	(
+		return getINISetting iniFile "BRACELETTRIM"		
 	)
 	
 	fn getDummies =
@@ -433,6 +466,26 @@ rollout _rStep1  "Settings"
 		addObjects()
 	)
 	
+	on spnPushVal changed v do
+	(
+		r = ddlPushByRes.selected 
+		if(r == undefined) do return false
+		
+		setINISetting iniFile "RES" r (v as string)		
+	)
+	
+	on ddlPushByRes selected v do
+	(
+		s = ddlPushByRes.selected 
+		if(s == undefined) do return false
+		
+		val = getIniSetting iniFile "RES" s
+			
+		if(val == undefined or val == "") then val = defaultPushValue
+		
+		spnPushVal.value = val as float
+	)
+	
 	on btnAddBracelet pressed do
 	(									
 		addObjects type: #bracelet
@@ -444,6 +497,27 @@ rollout _rStep1  "Settings"
 		(
 			setINISetting iniFile "BRACELET" b "true"
 		)		
+	)
+	
+	on btnAddBraceletTrim pressed do
+	(									
+		addObjects type: #bracelettrim
+		s = lbxBraceletTrim.selection
+		
+		i = lbxBraceletTrim.items	
+				
+		setINISetting iniFile "BRACELETTRIM" i[1] "true"				
+	)
+	
+	on btnDelBraceletTrim pressed do
+	(
+		o = lbxBraceletTrim.items
+		
+		if(o.count == 0) do return false
+		
+		lbxBraceletTrim.items = deleteItems o items: #(1)
+		
+		delIniSetting iniFile "BRACELETTRIM" o[1]
 	)
 	
 	on btnAddDummy pressed do
@@ -676,12 +750,17 @@ rollout _rStep2  "Render"
 		return n
 	)
 	
-	fn enablePushMod o enable: true =
+	fn enablePushMod o res: "0x0" enable: true =
 	(
 		for s in o do
 		(
 			pushModifer = s.modifiers[#Push] 
-			if(pushModifer != undefined) do pushModifer.enabled = enable
+			if(pushModifer == undefined) do continue
+			v = getINISetting iniFile "RES" res
+			if(v == undefined or v == "") do v = defaultPushValue
+						
+			pushModifer.enabled = enable
+			pushModifer.Push_Value = v as float		
 		)
 	)
 	
@@ -695,14 +774,22 @@ rollout _rStep2  "Render"
 	(
 		i = #("488x305", "744x465", "1920x1200")
 		lbxResoluton.items = i
+		_rStep1.ddlPushByRes.items = i
+		
+		for r in i do setINISetting iniFile "RES" r ""
 	)
 	
 	on btnAddResolution pressed do
 	(
 		i = lbxResoluton.items
+				
+		r = spnResolutionX.value as string + "x" + spnResolutionY.value as string
 		
-		append i (spnResolutionX.value as string + "x" + spnResolutionY.value as string)
+		append i r
 		
+		setINISetting iniFile "RES" r ""
+				
+		_rStep1.ddlPushByRes.items = i
 		lbxResoluton.items = i
 	)
 	
@@ -745,7 +832,10 @@ rollout _rStep2  "Render"
 		JewelsHeads = getObjects j
 		
 		b = _rStep1.getBracelet()
+		bTrim = _rStep1.getBraceletTrim()
+		
 		BraceletsHeads = getObjects b
+		BraceletTrimHeads = getObjects bTrim
 		
 		Dummies = _rStep1.getDummies()
 		
@@ -761,6 +851,7 @@ rollout _rStep2  "Render"
 		if(JewelsHeads.count == 0) do return messageBox "Jewels and Dummies not binded!" title: "Warning!"
 		if(iniFile.count < 2) do messageBox "Please browse Bracelet file!" title: "Warning!"
 		if(BraceletsHeads.count == 0) do return messageBox "Please add bracelet!" title: "Warning!"
+		if(BraceletTrimHeads.count == 0) do return messageBox "Please add bracelet for trim jewel!" title: "Warning!"
 		if(Type == undefined or Category == undefined or Size == undefined) do return messageBox "Bracelet scene name wrong! Should be:\n[Type]_[Category]_[Size]" title: "Warning!"
 				
 		disableSceneRedraw()
@@ -786,7 +877,7 @@ rollout _rStep2  "Render"
 					select bracelet
 															
 					-- Enable Push Modifier
-					enablePushMod bracelet
+					enablePushMod bracelet res: Resolution
 									
 					n =  renderName type:Type part:"S" persp:Cam.name category: Category size: Size stringColor: ((parseName BraceletsHead.name)[2]) obj: "" componentPos: "" res: Resolution
 					if(btnDebug.checked == true) do 
@@ -804,11 +895,11 @@ rollout _rStep2  "Render"
 					if(btnDebug.checked == false) do 
 					(
 						viewport.setCamera Cam
-											
+						
 						r = (setResolution Resolution)
 						renderWidth = r[1]
 						renderHeight = r[2]
-																												
+						
 						max quick render
 						
 						try(VFBPlus2.SaveImage n)catch(return messageBox "Please install VFB+")
@@ -819,7 +910,7 @@ rollout _rStep2  "Render"
 							return enableSceneRedraw()
 						)
 					)
-										
+					
 					hide bracelet
 					-- Disable Push Modifier
 					enablePushMod bracelet enable: false
@@ -834,7 +925,7 @@ rollout _rStep2  "Render"
 		)
 			
 		-- Bracelet						
-		bracelet = getByHead BraceletsHeads[1]
+		bracelet = getByHead BraceletTrimHeads[1]
 		unhide	bracelet
 		-- Set Matte
 		SetAsMatte bracelet enable: true
