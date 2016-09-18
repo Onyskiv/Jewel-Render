@@ -33,6 +33,8 @@ HELP = help\jwrender.html
 + Added: Set Push Modifier Value for string by resolution=
 + Added: Section for add custom bracelet for trim jewels in render=
 
+[1.0.6]
++ Added: Default Push Value values=
 
 [ABOUT]
 
@@ -318,6 +320,8 @@ rollout _rStep0  "Path"
 			iniFile += (getFileNameFile f) + ".ini"
 			deleteFile iniFile
 			
+			if(not doesFileExist iniFile) do _rStep2.setDefaultParams()
+						
 			--getList type: #jewel
 			--getList type: #dummy
 			--getList type: #bracelet
@@ -662,7 +666,7 @@ rollout _rStep2  "Render"
 	)
 	
 	button btnRender "Render" height: 35 width: 260
-	
+		
 	fn SetAsMatte b enable: true =
 	(
 		for o in b do
@@ -769,14 +773,24 @@ rollout _rStep2  "Render"
 		if(isGroupHead s) do return s.children
 		return s
 	)
-	
-	on _rStep2 open do
+	fn setDefaultParams =
 	(
-		i = #("488x305", "744x465", "1920x1200")
-		lbxResoluton.items = i
+		setINISetting iniFile "RES" "488x305" (units.decodeValue "0.17mm" as string)
+		setINISetting iniFile "RES" "744x465" (units.decodeValue "0.11mm" as string)
+		setINISetting iniFile "RES" "1920x1200" (units.decodeValue "0.04mm" as string)
+		i = getINISetting iniFile "RES"
+		
+		lbxResoluton.items = i		
 		_rStep1.ddlPushByRes.items = i
 		
-		for r in i do setINISetting iniFile "RES" r ""
+		s = _rStep1.ddlPushByRes.selected
+		v = getINISetting iniFile "RES" s
+		if(v != undefined  and v != "") do _rStep1.spnPushVal.value = v as float
+	)
+			
+	on _rStep2 open do
+	(				
+		
 	)
 	
 	on btnAddResolution pressed do
