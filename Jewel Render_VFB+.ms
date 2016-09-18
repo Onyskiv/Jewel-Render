@@ -60,6 +60,7 @@ global _rAddObjects
 global rJewelRender = newRolloutFloater "Shamballa Jewels" 300 900
 global _rStep1
 global _rStep0
+global _rStep2
 
 
 global jewelArray = #()
@@ -248,7 +249,7 @@ rollout _rStep0  "Path"
 		edittext edtBraceletlScene "" height:25 readOnly:true 
 		button btnBraceletScene "Browse"
 	)
-	
+	timer tmrSetDefParams "" active: false interval: 100
 	fn disableUI d btn: true =
 	(
 		for i in _rStep0.controls do i.enabled = d
@@ -296,6 +297,11 @@ rollout _rStep0  "Path"
 			edtJewelScene.text = f					
 		)
 	)
+	on tmrSetDefParams tick do
+	(
+		_rStep2.setDefaultParams()	
+		tmrSetDefParams.active = false
+	)
 	
 	on btnBraceletScene pressed do
 	(
@@ -320,7 +326,7 @@ rollout _rStep0  "Path"
 			iniFile += (getFileNameFile f) + ".ini"
 			deleteFile iniFile
 			
-			if(not doesFileExist iniFile) do _rStep2.setDefaultParams()
+			if(not doesFileExist iniFile) do tmrSetDefParams.active = true
 						
 			--getList type: #jewel
 			--getList type: #dummy
